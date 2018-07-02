@@ -31,7 +31,6 @@ for name in powers: print(name)
 #plot the total lensed CMB power spectra versus unlensed, and fractional difference
 totCL=powers['total']
 lensedCL=powers['lensed_scalar']
-unlensedCL=powers['unlensed_scalar']
 lens_pot = powers['lens_potential']
 print(totCL.shape)
 
@@ -43,17 +42,17 @@ TT_totCL = totCL[:,0]
 EE_totCL = totCL[:,1]
 BB_totCL = totCL[:,2]
 TE_totCL = totCL[:,3]
-TT_unlensedCL = unlensedCL[:,0]
-EE_unlensedCL = unlensedCL[:,1]
-BB_unlensedCL = unlensedCL[:,2]
-TE_unlensedCL = unlensedCL[:,3]
+TT_lensedCL = lensedCL[:,0]
+EE_lensedCL = lensedCL[:,1]
+BB_lensedCL = lensedCL[:,2]
+TE_lensedCL = lensedCL[:,3]
 
 ells = np.arange(totCL.shape[0])
 
-Cl_TT = np.nan_to_num((TT_unlensedCL * 2*np.pi)/(ells*(ells+1)))
-Cl_EE = np.nan_to_num((EE_unlensedCL * 2*np.pi)/(ells*(ells+1)))
-Cl_BB = np.nan_to_num((BB_unlensedCL * 2*np.pi)/(ells*(ells+1)))
-Cl_TE = np.nan_to_num((TE_unlensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_TT = np.nan_to_num((TT_lensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_EE = np.nan_to_num((EE_lensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_BB = np.nan_to_num((BB_lensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_TE = np.nan_to_num((TE_lensedCL * 2*np.pi)/(ells*(ells+1)))
 Cl_PP = np.nan_to_num((PP_lenspot  * 2*np.pi)/(ells*(ells+1)))**2
 
 
@@ -91,16 +90,15 @@ fwhm_arcmin = 4
 '''
 
 def CL_noise_temp(noise_uK_arcmin_pol, fwhm_arcmin):
-    del_x = (((noise_uK_arcmin_pol/(np.sqrt(2))) * np.pi/180./60.)/2.728E6)
+    del_x = (noise_uK_arcmin_pol * np.pi/180./60./np.sqrt(2))
     CL_n = (del_x**2) * np.exp((ells*(ells+1) * (fwhm_arcmin * np.pi/180./60.)**2)/(8. * np.log(2)))
     return CL_n
 
 def CL_noise_pol(noise_uK_arcmin_pol, fwhm_arcmin):
-    del_x = (noise_uK_arcmin_pol * np.pi/180./60./2.728E6)
+    del_x = (noise_uK_arcmin_pol * np.pi/180./60.)
     CL_n = (del_x**2) * np.exp((ells*(ells+1) * (fwhm_arcmin * np.pi/180./60.)**2)/(8. * np.log(2)))
     return CL_n
 
-embed()
 #Calculating the noise hat power spectrum where Cl_EE and Cl_BB is the scalar lensed power spectrum with size (2551,) or binned ells as 0<=ell<=2550
 #SPT-3G
 CL_TT_hat1 = Cl_TT + CL_noise_temp(3.0,1.2)
@@ -120,6 +118,7 @@ CL_BB_hat3 = Cl_BB + CL_noise_pol(9.6,8)
 CL_TT_hat4 = Cl_TT + CL_noise_temp(np.sqrt(2),4)
 CL_EE_hat4 = Cl_EE + CL_noise_pol(np.sqrt(2),4)
 CL_BB_hat4 = Cl_BB + CL_noise_pol(np.sqrt(2),4)
+CL_PP_hat4 = Cl_PP + CL_noise_temp(np.sqrt(2),4)
 
 #So what the np.interp function does in this context is it takes np.interp(x,xp,fp) = y where the parameters are defined in more detail below. So in effect it takes an array of x values and and an array of xp values where those xp values are used as the reference for x to interpolate from. From there, it is possible to just take the yp value as the new interpolated value for the x input values using fp. So below, taking the magnitude of Lx and Ly coordinate or l_x and l_y
 '''
@@ -179,7 +178,7 @@ def A_TB(L_x,del_l,CL_TT_hat,CL_BB_hat):
             if np.logical_and(np.logical_and(2<abs_l2[i,j], abs_l2[i,j]<2500),np.logical_and(2<abs_l1[i,j], abs_l1[i,j]<2500))==True:
                 #print(i,j)
              
-                f_TB = 2*(Cl_TE[abs_l1[i,j]])*(np.cos(2*phi_12[i,j]))
+                f_TB = 2.0*(Cl_TE[abs_l1[i,j]])*(np.cos(2*phi_12[i,j]))
                 F_TB = f_TB/(CL_TT_hat[abs_l1[i,j]]*CL_BB_hat[abs_l2[i,j]])
                 integrand.append(f_TB*F_TB)
     return (np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
@@ -210,10 +209,10 @@ def A_EB(L_x,del_l,CL_EE_hat,CL_BB_hat):
             if np.logical_and(np.logical_and(2<abs_l2[i,j], abs_l2[i,j]<2500),np.logical_and(2<abs_l1[i,j], abs_l1[i,j]<2500))==True:
                 #print(i,j)
              
-                f_EB = (L_x*l1_x[i,j]*Cl_EE[abs_l1[i,j]]-L_x*l2_x[i,j]*Cl_BB[abs_l2[i,j]])*(np.sin(2*phi_12[i,j]))
+                f_EB = 2.0*(Cl_EE[abs_l1[i,j]]-Cl_BB[abs_l2[i,j]])*(np.cos(2*phi_12[i,j]))
                 F_EB = f_EB/(CL_EE_hat[abs_l1[i,j]]*CL_BB_hat[abs_l2[i,j]])
                 integrand.append(f_EB*F_EB)
-    return L_x**2*(np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
+    return (np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
 
 def A_EE(L_x,del_l,CL_EE_hat):
     lx = np.arange(-3000,3000,del_l)
@@ -243,10 +242,10 @@ def A_EE(L_x,del_l,CL_EE_hat):
             if np.logical_and(np.logical_and(2<abs_l2[i,j], abs_l2[i,j]<2500),np.logical_and(2<abs_l1[i,j], abs_l1[i,j]<2500))==True:
                 #print(i,j)
              
-                f_EE = (L_x*l1_x[i,j]*Cl_EE[abs_l1[i,j]]+L_x*l2_x[i,j]*Cl_EE[abs_l2[i,j]])*(np.cos(2*phi_12[i,j]))
-                F_EE = f_EE/(2.0*CL_EE_hat[abs_l1[i,j]]*CL_EE_hat[abs_l2[i,j]])
+                f_EE = 2.0*(Cl_EE[abs_l1[i,j]]-Cl_EE[abs_l2[i,j]])*(np.sin(2*phi_12[i,j]))
+                F_EE = f_EE/(CL_EE_hat[abs_l1[i,j]]*CL_EE_hat[abs_l2[i,j]])
                 integrand.append(f_EE*F_EE)
-    return L_x**2*(np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
+    return (np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
 
 def A_BB(L_x,del_l,CL_BB_hat):
     lx = np.arange(-3000,3000,del_l)
@@ -276,10 +275,10 @@ def A_BB(L_x,del_l,CL_BB_hat):
             if np.logical_and(np.logical_and(2<abs_l2[i,j], abs_l2[i,j]<2500),np.logical_and(2<abs_l1[i,j], abs_l1[i,j]<2500))==True:
                 #print(i,j)
              
-                f_BB = (L_x*l1_x[i,j]*Cl_BB[abs_l1[i,j]]+L_x*l2_x[i,j]*Cl_BB[abs_l2[i,j]])*(np.cos(2*phi_12[i,j]))
-                F_BB = f_BB/(2.0*CL_BB_hat[abs_l1[i,j]]*CL_BB_hat[abs_l2[i,j]])
+                f_BB = (Cl_BB[abs_l1[i,j]]+Cl_BB[abs_l2[i,j]])*(np.sin(2*phi_12[i,j]))
+                F_BB = f_BB/(CL_BB_hat[abs_l1[i,j]]*CL_BB_hat[abs_l2[i,j]])
                 integrand.append(f_BB*F_BB)
-    return L_x**2*(np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
+    return (np.sum(np.array(integrand))*(del_l**2)/(2*np.pi)**2)**(-1) 
 
 A_TB1 = []
 A_EB1 = []
@@ -306,25 +305,29 @@ for i in range(2549):
     #A_EE1.append(A_EE(L[i],10,CL_EE_hat4))
     #A_BB1.append(A_BB(L[i],10,CL_BB_hat4))
     #A_EB1.append(A_EB(L[i],10,CL_EE_hat4,CL_BB_hat4))
-    #A_PP1.append(A_PP(L[i],10,CL_PP_hat4))
+    
     
 
     print(i)
 
+
+embed()
+
+A_TB1 = np.array(A_TB1)
+A_EB1 = np.array(A_EB1)
 A_TB2 = np.array(A_TB2)
 A_EB2 = np.array(A_EB2)
 A_TB3 = np.array(A_TB3)
 A_EB3 = np.array(A_EB3)
 A_TB4 = np.array(A_TB4)
 A_EB4 = np.array(A_EB4)
-embed()
 
-#D_TB2 = np.sqrt((L**2)*A_TB2/(2*np.pi))
-#D_EB2 =np.sqrt((L**2)*A_EB2/(2*np.pi))
-#D_TB3 =np.sqrt((L**2)*A_TB3/(2*np.pi))
-#D_EB3 =np.sqrt((L**2)*A_EB3/(2*np.pi))
-#D_TB4 =np.sqrt((L**2)*A_TB4/(2*np.pi))
-#D_EB4 =np.sqrt((L**2)*A_EB4/(2*np.pi))
+D_TB2 =np.sqrt((L**2)*A_TB2/(2*np.pi))
+D_EB2 =np.sqrt((L**2)*A_EB2/(2*np.pi))
+D_TB3 =np.sqrt((L**2)*A_TB3/(2*np.pi))
+D_EB3 =np.sqrt((L**2)*A_EB3/(2*np.pi))
+D_TB4 =np.sqrt((L**2)*A_TB4/(2*np.pi))
+D_EB4 =np.sqrt((L**2)*A_EB4/(2*np.pi))
 
 
 
@@ -342,82 +345,7 @@ plt.ylim(1e-3, 1e1)
 plt.show()	
 embed()
 
-#phi_L =  phi[134,88]-phi[45,79]
-#v_l = (1,np.exp(4*1j*phi))
-del_l = 10
-
-#Creates an array of size (600,) between -3000 to 2990 in del_l = 10 increments
-#lx = np.arange(-3000,3000,del_l)
-ly=np.copy(lx)
-
-#Creates a 2d array by taking lx and repeating that 600 times in the vertical direction and defining that as Lx
-#Similarly, taking ly and repeating that 600 times in the horizontal direction and defing that as Ly
-Lx,Ly = np.meshgrid(lx,ly)
-
-#Takes the corresponding Lx and Ly coordinate and calculating its magnitude or l_x and l_y on the axes.
-L = np.sqrt(Lx**2+Ly**2)
-
-#This defines the angle of the ell vector with respect to the postive l_x axis. Also takes into account arctan is defined differently for each quadrant.
-phi = np.nan_to_num(np.arctan2(Ly,Lx))
-
-
-
-
-l1_x = Lx
-l1_y = Ly
-L_x = 500
-l2_x = L_x - l1_x
-l2_y = -l1_y
-phi_2 = np.nan_to_num(np.arctan2(l2_y,l2_x))
-phi_21 = phi_2-phi
-abs_l1 = np.abs(np.around(L)).astype(int)
-abs_l2 = np.abs(np.around(np.sqrt(l2_x**2+l2_y**2))).astype(int)
-
-
-
-integrand = []
-embed()
-for i in range(len(l1_x[0])):
-    for j in range(len(l1_y[:,0])):
-        if np.logical_and(np.logical_and(2<abs_l2[i,j], abs_l2[i,j]<2500),np.logical_and(2<abs_l1[i,j], abs_l1[i,j]<2500))==True:
-            print(i,j)
-             
-            f_EB = 2*(Cl_EE[abs_l2[i,j]]-Cl_BB[abs_l1[i,j]])*(phi_21[i,j])
-            F_EB = f_EB/(CL_EE_hat[abs_l2[i,j]]-CL_BB_hat[abs_l1[i,j]])
-            integrand.append(f_EB*F_EB)
-            #embed()
-A_EB_500 = (np.sum(np.array(integrand))*(del_l**2))**(-1) 
-
-embed()
-
-f_EB = 2*(Cl_EE[160]-Cl_BB[91])*phi_L
-F_EB = f_EB/(CL_EE_hat[160]*CL_BB_hat[91])
-
-i_1651,j_1651 = np.where(np.around(L)==1651)
-i_1100,j_1100 = np.where(np.around(L)==1100)
-
-
-'''
-C_L_EE_1651= np.interp(1651,ells,Cl_EE)
-C_L_BB_1651= np.interp(1651,ells,Cl_BB)
-C_L_EE_hat_1651 = np.interp(1651,ells,CL_EE_hat)
-C_L_BB_hat_1651 = np.interp(1651,ells,CL_BB_hat)
-C_L_EE_1100= np.interp(1100,ells,Cl_EE)
-C_L_BB_1100= np.interp(1100,ells,Cl_BB)
-C_L_EE_hat_1100 = np.interp(1100,ells,CL_EE_hat)
-C_L_BB_hat_1100 = np.interp(1100,ells,CL_BB_hat)
-f_EB_551 = 2*(C_L_EE_1651-C_L_BB_1100)*np.cos(2*(phi[i_1651[500:4500],j_1651[500:4500]]-phi[i_1100[500:4500],j_1100[500:4500]]))
-F_EB_551 = f_EB_551/(C_L_EE_hat_1651*C_L_BB_hat_1100)
-A_EB_551 = np.fft.ifft(f_EB_551*F_EB_551)
-'''
-
-embed()
-
 data = { 'L' : L, 'A_TB1' : A_TB1, 'A_EB1' : A_EB1, 'A_TB2' : A_TB2, 'A_EB2' : A_EB2, 'A_TB3' : A_TB3, 'A_EB3' : A_EB3, 'A_TB4' : A_TB4, 'A_EB4' : A_EB4 }
-with open("N_PP.pkl", "wb") as infile:
+with open("N_AA.pkl", "wb") as infile:
     pickle.dump(data, infile) 
-  
-
-
-
   

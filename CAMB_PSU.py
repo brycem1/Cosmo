@@ -32,6 +32,7 @@ for name in powers: print(name)
 #plot the total lensed CMB power spectra versus unlensed, and fractional difference
 totCL=powers['total']
 lensedCL=powers['lensed_scalar']
+unlensedCL=powers['unlensed_scalar']
 lens_pot = powers['lens_potential']
 print(totCL.shape)
 
@@ -43,25 +44,23 @@ TT_totCL = totCL[:,0]
 EE_totCL = totCL[:,1]
 BB_totCL = totCL[:,2]
 TE_totCL = totCL[:,3]
-TT_lensedCL = lensedCL[:,0]
-EE_lensedCL = lensedCL[:,1]
-BB_lensedCL = lensedCL[:,2]
-TE_lensedCL = lensedCL[:,3]
-
+TT_unlensedCL = unlensedCL[:,0]
+EE_unlensedCL = unlensedCL[:,1]
+BB_unlensedCL = unlensedCL[:,2]
+TE_unlensedCL = unlensedCL[:,3]
 
 ells = np.arange(totCL.shape[0])
 
 
-Cl_TT = np.nan_to_num((TT_lensedCL * 2*np.pi)/(ells*(ells+1)))
-Cl_EE = np.nan_to_num((EE_lensedCL * 2*np.pi)/(ells*(ells+1)))
-Cl_BB = np.nan_to_num((BB_lensedCL * 2*np.pi)/(ells*(ells+1)))
-Cl_TE = np.nan_to_num((TE_lensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_TT = np.nan_to_num((TT_unlensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_EE = np.nan_to_num((EE_unlensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_BB = np.nan_to_num((BB_unlensedCL * 2*np.pi)/(ells*(ells+1)))
+Cl_TE = np.nan_to_num((TE_unlensedCL * 2*np.pi)/(ells*(ells+1)))
 Cl_PP = np.nan_to_num((PP_lenspot  * 2*np.pi)/((ells*(ells+1))**2))
-Cl_AA = np.nan_to_num((2.0*np.pi*1e-5)/(1.0*ells*(ells+1.0)))
 
 embed()
 '''
-data = { 'ell' : ells, 'Cl_TT' : Cl_TT, 'Cl_EE' : Cl_EE, 'Cl_BB' : Cl_BB, 'Cl_TE' : Cl_TE, 'Cl_PP' : Cl_PP,'Cl_AA' : Cl_AA}
-with open("PS.pkl", "wb") as infile:
+data = { 'ell' : ells, 'Cl_TT' : Cl_TT, 'Cl_EE' : Cl_EE, 'Cl_BB' : Cl_BB, 'Cl_TE' : Cl_TE, 'Cl_PP' : Cl_PP}
+with open("PSU.pkl", "wb") as infile:
     pickle.dump(data, infile) 
 '''

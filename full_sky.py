@@ -92,6 +92,9 @@ def f_EB_l1l2l(l1,l2,l):
 def ell_one(l2,l):
     return np.arange(max(abs(l2-l),abs(2)),l2+l+1)
 
+def ell_three(l1,l2):
+    return np.arange(max(abs(l2-l),abs(2)),l2+l1+1)
+
 #l1 = np.arange(max(abs(l2-l3),abs(2))
 #(-l1*(l1+1)+l2*(l2+1)+l3*(l3+1))*np.sqrt((2*l1+1)*(2*l2+1)*(2*l3+1)/(16*np.pi)))
 
@@ -100,7 +103,7 @@ Cl1_Bres = []
 ps = pickle.load(open("PS.pkl","rb"))
 N_XX = pickle.load(open("A_XX.pkl","rb"))
 
-N_PP = N_XX['A_PP1'][1:len(N_XX['A_PP1'])]
+#N_PP = N_XX['A_PP1'][1:len(N_XX['A_PP1'])]
 N_EE = N_XX['A_EE1'][1:len(N_XX['A_EE1'])]
 N_BB = N_XX['A_BB1'][1:len(N_XX['A_BB1'])]
 N_EB = N_XX['A_EB1'][1:len(N_XX['A_EB1'])]
@@ -139,9 +142,9 @@ for i in range(len(L1)):
 
 '''
 
+
 Cl1_Bres = np.zeros(2050)
-
-
+'''
 for j in range(len(L2)):
     for k in range(len(L3)):
        
@@ -149,13 +152,39 @@ for j in range(len(L2)):
 	summand = f_abs2*(Cl_EE[j]*Cl_PP[k]-((Cl_EE[j])**2/(Cl_EE[j]+N_EE[j]))*((Cl_PP[k])**2/(Cl_PP[k]+N_PP[k])))
         Cl1_Bres[max(abs(L2[j]-L3[k]),abs(2)):L2[j]+L3[k]+1] += summand
 	print(j,k)
+'''
+for j in range(len(L2)):
+    for k in range(len(L3)):
+       
+        f_abs2 = np.real(f_EB_l1l2l(ell_one(L2[j],L3[k]),L2[j],L3[k])*np.conj(f_EB_l1l2l(ell_one(L2[j],L3[k]),L2[j],L3[k])))        
+	#summand = f_abs2*(Cl_EE[j]*Cl_PP[k]-((Cl_EE[j])**2/(Cl_EE[j]+N_EE[j]))*((Cl_PP[k])**2/(Cl_PP[k]+0.0)))
+        summand = f_abs2*(Cl_EE[j]*Cl_PP[k])
+        Cl1_Bres[max(abs(L2[j]-L3[k]),abs(2)):L2[j]+L3[k]+1] += summand
+	print(j,k)
 Cl1_Bres_test = Cl1_Bres[2:1001]/(2.0*L1+1)
 
 plt.plot(L1,Cl1_Bres_test)
 plt.xscale('log')
 plt.yscale('log')
+plt.title('Full sky')
 plt.xlabel('L')
 plt.ylabel(r'$C_{\ell_1}^{B_{res}}$')
+plt.figure(2)
+plt.plot(L1,Cl1_Bres_test/(Cl_BB[2:len(N_XX['A_PP1'])+1]))
+plt.xscale('log')
+plt.yscale('log')
+plt.title('full-CAMB')
+plt.xlabel('L')
+plt.ylabel(r'$C_{\ell_1}^{B_{lens}}$')
 plt.show()
+
+plt.plot(L1,Cl_PP[2:len(N_XX['A_PP1'])+1])
+plt.xscale('log')
+plt.yscale('log')
+plt.title('full-CAMB')
+plt.xlabel('L')
+plt.ylabel(r'$C_{\ell_1}^{PP}$')
+plt.show()
+
 
 embed()
