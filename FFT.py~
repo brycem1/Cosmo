@@ -1,0 +1,165 @@
+import astropy
+import matplotlib.pyplot as plt
+from scipy import optimize
+from numpy import *
+from IPython import embed
+import numpy.fft as fft
+import pickle
+import pdb
+
+#apodization scheme (i.e. mask)
+
+mask = zeros((601,601))
+'''
+ii=(range(601)-300)*0.5
+x = np.tile()
+y = ...
+dist = sqrt(x*x + y*y)
+mask = dist*0
+mask[dist < 30] = 1
+mask[logical_and(dist < 40,dist>30)]=exp(....
+'''
+
+for i in range(601):
+    for j in range(601):
+        #convert index to arcminute scale with pixel size 0.5 and flat map from -150'<=x,y<=150'
+        arcx = (i -300)*0.5
+        arcy = (j -300)*0.5
+        mod_arc = sqrt(arcx**2+arcy**2)
+        if mod_arc <30:
+            mask[j][i] = 1
+	else:
+	    mask[j][i] = exp(-((mod_arc-30)/5)**2)
+	'''
+        elif 30 <= mod_arc <=40:
+            mask[j][i] = exp(-((mod_arc-30)/5)**2)
+        else:
+            mask[j][i] = 0
+	'''
+#embed()
+
+def gaussian(p, x, y):
+    height, center_x, center_y, width_x, width_y = p
+    return height*exp(-(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2)
+
+#This function is useless as you know the rough centre and stuff
+def moments(data):
+    total = sum(data)
+    X, Y = indices(data.shape)
+    center_x = sum(X*data)/total
+    center_y = sum(Y*data)/total
+    row = data[int(center_x),:]
+    col = data[:, int(center_y)]
+    width_x = sum(sqrt(abs((arange(col.size)-center_y)**2*col))/sum(col))
+    width_y = sum(sqrt(abs((arange(row.size)-center_x)**2*row))/sum(row))
+    height = amax(data)
+    return height, center_x, center_y, width_x, width_y
+
+def errorfunction(p, x, y, data):
+    #embed()
+    err =  gaussian(p,x,y) - data
+    return err.flatten()
+
+def fitgaussian(data):
+    #params = moments(data)
+    n=data.shape[0]
+    params=[1,n/2,n/2,2.5,2.5]
+    X, Y = indices(data.shape)
+    x = X
+    y = Y
+    #embed()
+    p, success = optimize.leastsq(errorfunction, params, args = (x, y, data))
+    return p
+
+    
+def ft2(data):
+    return fft.fft2(data)
+
+def ftfreq(length):
+    return fft.fftfreq(length)
+    
+
+cm = pickle.load(open("coadded_maps.pkl","rb"))
+
+data = cm['all'].I*mask
+test = ft2(data)
+#taking the mod of the fft
+#Could use abs but cbf
+atest = abs(test)
+a2test = atest*atest
+rtest = test.real
+'''
+for i in range(601):
+    for j in range(601):
+	test[i][j]=sqrt(test[i][j].real**2+test[i][j].imag**2)
+'''
+#Obtaining the k_x and k_y values. Now 
+
+freq = ftfreq(601)
+freq = 2*pi*freq
+	
+ell = zeros((601,601))
+for i in range(601):
+    for j in range(601):
+	ell[i][j]=sqrt(freq[i]**2+freq[j]**2)
+#Converts this from arcmin to radian, this takes into account the pixel size as 0.5'
+ell = ell/((0.5/60)*pi/180)
+ell_min = arange(200)*50
+ell_max = arange(200)*50+50
+ell_cen = 0.5*(ell_min+ell_max)
+
+bl=zeros(200)
+bl2 = zeros(200)
+bl3 = zeros(200)
+for i in range(200):
+    bl[i] = mean(atest[logical_and(ell >= ell_min[i],ell < ell_max[i])])
+    bl2[i] = mean(a2test[logical_and(ell >= ell_min[i],ell < ell_max[i])])
+    bl3[i] = mean(rtest[logical_and(ell >= ell_min[i],ell < ell_max[i])])
+'''
+arange(0,9950,50)
+ell_max = arange(50,10000,50)
+'''
+
+#bins = arange(0,30560,80)
+#inds = digitize(ell,bins)
+'''for
+In [4]: ell[300][9]
+Out[4]: 3.1377764249657676
+
+In [5]: amax(ell)
+Out[5]: 4.435490454068252
+
+In [6]: 4.4/(0.5/60/180*3.14)
+Out[6]: 30267.515923566883
+'''
+
+
+plt.figure(1)
+plt.plot(ell_cen,bl)
+plt.xlabel(r'${\ell}$')
+plt.ylabel(r'$B_{\ell}$')
+plt.title('Beam map (mod)')
+
+plt.figure(2)
+plt.plot(ell_cen,bl2)
+plt.xlabel(r'${\ell}$')
+plt.ylabel(r'$B_{\ell}$')
+plt.title('Beam map (mod^2)')
+
+plt.figure(3)
+plt.plot(ell_cen,bl3)
+plt.xlabel(r'${\ell}$')
+plt.ylabel(r'$B_{\ell}$')
+plt.title('Beam map (real)')
+
+plt.show()
+'''
+#pdb.set_trace()
+plt.figure()
+
+#plt.imshow(log(abs(data)))
+plt.imshow(test)
+plt.colorbar()
+
+plt.show()
+'''

@@ -1,0 +1,44 @@
+o cute!!import astropy
+import matplotlib.pyplot as plt
+from scipy import optimize
+import numpy as np
+from IPython import embed
+import numpy.fft as fft
+import pickle
+import pdb
+import healpy as hp
+import h5py
+import AnalysisBackend.whwp.maprep_whwp as maprep
+
+m = maprep.MapMakingVectors.load('realmap.hdf5')
+mm = m.mapinfo
+
+#mm.pixel_size = 0.0005817764173314432
+
+
+I = mm.view2d(m.I)
+ft_I = fft.fft2(I)
+mod_ft_I_sq = abs(ft_I)**2
+#ft_I.shape = (2401, 2401)
+freq = fft.fftfreq(2401)
+freq = 2*np.pi*freq
+
+ell = np.zeros((2401,2401))
+for i in range(2401):
+    for j in range(2401):
+	ell[i][j]=np.sqrt(freq[i]**2+freq[j]**2)
+#After doing the fftfreq, this takes into account the pixel size
+ell = ell/0.0005817764173314432
+ell_min = np.arange(200)*30
+ell_max = np.arange(200)*30+30
+ell_cen = 0.5*(ell_min+ell_max)
+n_modes = len(ell_cen)
+
+mod_ft_I_sq_bin = np.zeros(n_modes)
+for i in range(n_modes):
+    mod_ft_I_sq_bin[i] = np.mean(mod_ft_I_sq[np.logical_and(ell >= ell_min[i],ell < ell_max[i])])*((ell_cen[i]*ell_cen[i]+1)/(2*np.pi))
+#embed()
+
+#I don't think this is right as for Planck got an array of C_l, so I think there should be a list of k values per bin
+d_b = np.sum(mod_ft_I_sq_bin)/n_modes
+embed()

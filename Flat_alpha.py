@@ -62,7 +62,6 @@ plt.ylabel('N(L)')
 plt.show()
 '''
 @numba.jit
-
 def Cl_BB_AA_lensf(L_x,del_l):
     lx = np.arange(-3000,3000,del_l)
     ly=np.copy(lx)
@@ -79,13 +78,13 @@ def Cl_BB_AA_lensf(L_x,del_l):
     l2_y = -l1_y
     L_y = 0.0
     phi_2 = np.nan_to_num(np.arctan2(l2_y,l2_x))
-    phi_12 = phi-phi_2
+    phi_12 = phi_2-phi
     abs_l1 = np.abs(np.around(L)).astype(int)
     abs_l2 = np.abs(np.around(np.sqrt(l2_x**2+l2_y**2))).astype(int)
     
 
     phi_L = np.nan_to_num(np.arctan2(L_y,L_x))
-    phi_L1 = phi_L-phi
+    phi_L1 = phi-phi_L
     W_Ll1 = 2.*np.cos(2.*phi_L1)
     
     integrand = []
@@ -114,13 +113,13 @@ def Cl_BB_AA_resf(L_x,del_l):
     l2_y = -l1_y
     L_y = 0.0
     phi_2 = np.nan_to_num(np.arctan2(l2_y,l2_x))
-    phi_12 = phi-phi_2
+    phi_12 = phi_2-phi
     abs_l1 = np.abs(np.around(L)).astype(int)
     abs_l2 = np.abs(np.around(np.sqrt(l2_x**2+l2_y**2))).astype(int)
     
 
     phi_L = np.nan_to_num(np.arctan2(L_y,L_x))
-    phi_L1 = phi_L-phi
+    phi_L1 = phi-phi_L
     W_Ll1 = 2.*np.cos(2.*phi_L1)
     
     integrand = []
@@ -136,7 +135,7 @@ def Cl_BB_AA_resf(L_x,del_l):
 Cl_BB_AA_lens = []
 Cl_BB_AA_res = []
 
-for k in range(999):
+for k in range(1000):
     Cl_BB_AA_lens.append(Cl_BB_AA_lensf(L1[k],30))
     Cl_BB_AA_res.append(Cl_BB_AA_resf(L1[k],30))
     print(L1[k])
@@ -145,7 +144,7 @@ Cl_BB_AA_lens=np.array(Cl_BB_AA_lens)
 Cl_BB_AA_res=np.array(Cl_BB_AA_res)
 embed()
 plt.figure(1)
-plt.plot(L1[0:999],Cl_BB_AA_res,label = 'Cl_BB_rot_res',c='b')
+plt.plot(L1[0:999],Cl_BB_AA_res[0:999],label = 'Cl_BB_rot_res',c='b')
 plt.plot(L1[0:999],Cl_BB[0:999],label = 'Cl_BB_lens_camb',c='r')
 plt.xscale('log')
 plt.yscale('log')
@@ -154,7 +153,7 @@ plt.title('Lens rot res')
 plt.xlabel('L')
 plt.ylabel(r'$C_{\ell_1}^{B_{res}}$')
 plt.figure(2)
-plt.plot(L1[0:999],Cl_BB_AA_lens,label = 'Cl_BB_rot_lens',c='b')
+plt.plot(L1[0:999],Cl_BB_AA_lens[0:999],label = 'Cl_BB_rot_lens',c='b')
 plt.plot(L1[0:999],Cl_BB[0:999],label = 'Cl_BB_lens_camb',c='r')
 plt.xscale('log')
 plt.yscale('log')
